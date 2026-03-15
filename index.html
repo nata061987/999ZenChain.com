@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>999ZenChain - Official</title>
+  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script>
+  <style>
+    :root {
+      --zen-green: #99ff00;
+      --zen-dark: #0a0a0a;
+      --zen-gray: #1a1a1a;
+      --zen-border: #333;
+      --loss-red: #ff4444;
+    }
+    body { background: var(--zen-dark); color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; font-size: 11px; }
+    .header-wrapper { position: relative; display: flex; justify-content: center; align-items: center; gap: 14px; padding: 22px 0 15px; }
+    .main-logo-header { font-size: 38px; font-weight: 900; background: linear-gradient(180deg,#fff 30%,var(--zen-green) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing: 4px; margin: 0; }
+    .header-icon { width: 56px; height: 56px; object-fit: contain; background: #000; border-radius: 8px; }
+    .lang-tools { position: absolute; right: 14px; top: 10px; display: flex; align-items: center; gap: 8px; }
+    .clock-tools { position: absolute; left: 14px; top: 10px; display: flex; align-items: center; }
+    .lang-btn { background:#111; border:1px solid #444; color:#ddd; padding:4px 8px; font-size:10px; border-radius:4px; cursor:pointer; }
+    .lang-btn.active { background: var(--zen-green); color:#000; border-color: var(--zen-green); font-weight:700; }
+    #clock { color: var(--zen-green); min-width: 172px; text-align: left; font-family: monospace; }
+
+    .top-container { display: flex; justify-content: space-around; background: var(--zen-gray); padding: 15px 20px; border-top:1px solid var(--zen-border); border-bottom:2px solid var(--zen-green); }
+    .stat-column { width:33.3%; padding: 5px 15px; }
+    .row { display:flex; justify-content: space-between; margin-bottom:5px; gap:8px; }
+    .row span:first-child { color:#777; }
+    .zen-value { color: var(--zen-green); font-weight: bold; white-space: nowrap; }
+    .income-positive { color: var(--zen-green); }
+    .income-negative { color: var(--loss-red); }
+    .central { border-left:1px solid var(--zen-border); border-right:1px solid var(--zen-border); }
+
+    .wallet-zone { display:flex; justify-content:center; gap:10px; margin:20px 0; }
+    .btn-deposit,.btn-connect,.btn-withdraw { padding:10px 25px; border-radius:5px; font-size:13px; font-weight:bold; cursor:pointer; }
+    .btn-deposit { background: var(--zen-green); color:#000; border:none; }
+    .btn-connect { background: transparent; color: var(--zen-green); border:1px solid var(--zen-green); min-width:160px; }
+    .btn-withdraw { background:#222; color:#fff; border:1px solid #444; }
+
+    .game-panel,.section-box { max-width: 920px; margin: 0 auto 20px; background:#111; border:1px solid var(--zen-border); border-radius:12px; }
+    .game-panel { display:flex; justify-content: space-between; align-items: center; padding: 28px; gap:16px; }
+    .control-box { width:250px; text-align:center; }
+    .btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+    .small-btn { background: linear-gradient(#333,#111); color:#fff; border:1px solid #444; padding:6px; font-size:10px; border-radius:4px; cursor:pointer; }
+    .input-wrap label { color:#666; display:block; margin-bottom:8px; text-transform:uppercase; }
+    .input-wrap input,.account-input { width: 90%; background:#000; color:var(--zen-green); border:1px solid #333; border-radius:6px; padding:10px; text-align:center; font-size:16px; }
+    .center-play { text-align:center; }
+    .profit-val { color: var(--zen-green); font-size:24px; font-weight:bold; margin-bottom:8px; }
+    .main-btns { display:flex; gap:15px; }
+    .btn-roll { background: linear-gradient(#222,#000); border:2px solid #444; color:#fff; padding:20px 40px; font-size:22px; font-weight:bold; border-radius:10px; cursor:pointer; }
+    .roll-display { margin-top:10px; font-family:monospace; font-size:20px; font-weight:700; color:#999; min-height:26px; }
+
+    .menu-buttons { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+    .menu-buttons button { background:#111; color:var(--zen-green); border:1px solid var(--zen-green); padding:8px 15px; border-radius:6px; cursor:pointer; font-size:11px; min-width:102px; }
+
+    .section-box { padding:20px; display:none; min-height:120px; }
+    .section-box.active { display:block; }
+    .bet-item { display:flex; justify-content:space-between; font-family:monospace; font-size:10px; padding:8px; border-bottom:1px solid #222; }
+    #chat-input,.account-input { width:100%; box-sizing:border-box; margin-bottom:8px; color:#fff; text-align:left; font-size:12px; }
+    .account-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .account-card { border:1px solid #2a2a2a; border-radius:8px; background:#0c0c0c; padding:12px; }
+    .mini-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:8px 0; }
+    .muted { color:#777; }
+    .token-pills { display:flex; justify-content:center; gap:8px; margin:8px 0 8px; }
+    .token-pill { border:1px solid var(--zen-green); color:var(--zen-green); background:#111; border-radius:999px; padding:4px 10px; cursor:pointer; font-weight:700; }
+    .token-pill.active { background: var(--zen-green); color:#000; }
+    .token-balances { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .token-bal-item { border:1px solid #2e4f00; color:var(--zen-green); padding:4px 8px; border-radius:6px; font-family:monospace; }
+    .swap-meta { margin-top:8px; }
+
+    @media (max-width: 980px) {
+      .top-container { flex-direction:column; }
+      .stat-column { width:100%; }
+      .central { border:none; }
+      .game-panel { flex-direction:column; }
+      .account-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-wrapper">
+    <img id="leftLogo" class="header-icon" alt="ZenChain logo" />
+    <h1 class="main-logo-header">999ZenChain.com</h1>
+    <img id="rightLogo" class="header-icon" alt="ZenChain logo" />
+
+    <div class="clock-tools">
+      <div id="clock">--:--:--</div>
+    </div>
+
+    <div class="lang-tools">
+      <button class="lang-btn active" id="lang-ru" onclick="setLanguage('ru')">RU</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">EN</button>
+      <button class="lang-btn" id="lang-uk" onclick="setLanguage('uk')">UK</button>
+    </div>
+  </div>
+
+  <div class="top-container">
+    <div class="stat-column">
+      <div class="row"><span data-i18n="statsBetsTotal">Ставки (все):</span><span class="zen-value" id="top-total-bets">357,758,348</span></div>
+      <div class="row"><span data-i18n="statsWagered">Сумма ставок:</span><span class="zen-value"><span id="top-total-wagered">1,318,498.27</span> ZTC</span></div>
+      <div class="row"><span data-i18n="statsProfit">Профит:</span><span class="zen-value" id="top-profit">0.00 ZTC</span></div>
+    </div>
+    <div class="stat-column central">
+      <div class="row"><span data-i18n="statsGameBal">Игровой баланс:</span><span class="zen-value" id="game-balance">0.000000 ZTC</span></div>
+      <div class="row"><span data-i18n="statsUserBets">Ставки:</span><span class="zen-value" id="user-bets">0</span></div>
+      <div class="row"><span data-i18n="statsIncome">Доход:</span><span class="zen-value" id="top-income">+0.00 ZTC</span></div>
+    </div>
+    <div class="stat-column">
+      <div class="row"><span data-i18n="statsStatus">Статус:</span><span id="status-text" style="color:#555">ОФФЛАЙН</span></div>
+      <div class="row"><span data-i18n="statsPayout">Профит побед:</span><span class="zen-value" id="panel-payout">1.98x</span></div>
+      <div class="row"><span data-i18n="statsRef">Реф. доход:</span><span class="zen-value" id="ref-income">0.00 ZTC</span></div>
+    </div>
+  </div>
+
+  <div class="wallet-zone">
+    <button class="btn-deposit" onclick="showSection('account')" data-i18n="btnDeposit">ПОПОЛНИТЬ</button>
+    <button class="btn-connect" id="connectBtn" onclick="toggleWalletConnection()" data-i18n="btnConnect">ПОДКЛЮЧИТЬ</button>
+    <button class="btn-withdraw" onclick="showSection('account')" data-i18n="btnWithdraw">ВЫВЕСТИ</button>
+  </div>
+
+  <div class="game-panel">
+    <div class="control-box">
+      <div class="btn-grid">
+        <button class="small-btn" onclick="multiplyBet(0.5)" data-i18n="half">Половина</button>
+        <button class="small-btn" onclick="multiplyBet(2)" data-i18n="double">Удвоить</button>
+        <button class="small-btn" onclick="setBetValue('min')">МИН</button>
+        <button class="small-btn" onclick="setBetValue('max')">МАКС</button>
+      </div>
+      <div class="input-wrap">
+        <label data-i18n="betSize">Размер ставки</label>
+        <input type="text" id="betAmount" value="1.00000000" oninput="calcProfit()" />
+      </div>
+    </div>
+
+    <div class="center-play">
+      <div style="color:#555;text-transform:uppercase;margin-bottom:10px;" data-i18n="winProfit">Профит побед</div>
+      <div class="profit-val" id="profit-calc">1.98000000 ZTC</div>
+      <div class="main-btns">
+        <button class="btn-roll" onclick="playGame(49.5)" data-i18n="less">Меньше</button>
+        <button class="btn-roll" onclick="playGame(50.5)" data-i18n="more">Больше</button>
+      </div>
+      <div class="roll-display" id="roll-display">--.--</div>
+    </div>
+
+    <div class="control-box">
+      <div class="btn-grid">
+        <button class="small-btn" onclick="setChance(49.95)">49.95%</button>
+        <button class="small-btn" onclick="setChance(50)">50%</button>
+        <button class="small-btn" onclick="multiplyChance(2)" data-i18n="chanceX2">x2 Шанс</button>
+        <button class="small-btn" onclick="multiplyChance(0.5)" data-i18n="chanceHalf">/2 Шанс</button>
+      </div>
+      <div class="input-wrap">
+        <label data-i18n="winChance">% Шанс выигрыша</label>
+        <input type="text" id="winChance" value="49.5" oninput="calcProfit()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="menu-buttons">
+    <button onclick="showSection('allbets')" data-i18n="allBets">Все ставки</button>
+    <button onclick="showSection('mybets')" data-i18n="myBets">Мои ставки</button>
+    <button onclick="showSection('chat')" data-i18n="chat">Чат</button>
+    <button onclick="showSection('fair')" data-i18n="fairBets">Честные ставки</button>
+    <button onclick="showSection('ref')" data-i18n="referral">Рефералка</button>
+    <button onclick="showSection('account')" data-i18n="account">Аккаунт</button>
+    <button onclick="showSection('swap')" data-i18n="swap">Свап</button>
+    <button onclick="showSection('contacts')" data-i18n="contacts">Контакты</button>
+  </div>
+
+  <div class="section-box" id="allbets"><h2 data-i18n="allBets">Все ставки</h2><div id="all-list"></div></div>
+  <div class="section-box" id="mybets"><h2 data-i18n="myBets">Мои ставки</h2><div id="my-list"></div></div>
+
+  <div class="section-box" id="chat">
+    <h2 data-i18n="chat">Чат</h2>
+    <div id="chat-messages" style="height:150px;background:#000;margin-bottom:10px;padding:10px;overflow-y:auto;"></div>
+    <input id="chat-input" data-i18n-placeholder="chatPlaceholder" placeholder="Сообщение..." />
+    <button class="small-btn" onclick="sendChat()" data-i18n="send">Отправить</button>
+  </div>
+
+  <div class="section-box" id="fair">
+    <h2 data-i18n="fairBets">Честные ставки</h2>
+    <div><span data-i18n="serverSeed">Server Seed:</span> <span id="server-seed"></span></div>
+    <div><span data-i18n="clientSeed">Client Seed:</span> <span id="client-seed"></span></div>
+    <div><span data-i18n="nonce">Nonce:</span> <span id="nonce">0</span></div>
+    <button class="small-btn" style="margin-top:10px" onclick="generateSeed()" data-i18n="newSeed">Новый Seed</button>
+  </div>
+
+  <div class="section-box" id="ref">
+    <h2 data-i18n="referral">Рефералка</h2>
+    <input id="ref-link" class="account-input" readonly />
+  </div>
+
+  <div class="section-box" id="account">
+    <h2 data-i18n="account">Аккаунт</h2>
+    <div class="account-grid">
+      <div class="account-card">
+        <div class="muted" data-i18n="depositAddress">Ваш депозитный адрес:</div>
+        <div id="deposit-address" style="word-break:break-all;margin:8px 0;">0x210fca7849Cfe87370881cF057C4A0a41c9eCCf4</div>
+        <div class="muted" data-i18n="depositHint">Пополните и играйте мгновенно с внутреннего баланса.</div>
+        <div class="muted" data-i18n="depositTitle" style="margin-top:10px">Пополнение</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="color:var(--zen-green)">💰</span><input id="deposit-amount" class="account-input" type="number" min="0" step="0.0001" placeholder="10.00" style="margin:0" /></div>
+        <button class="small-btn" style="width:100%;margin-top:8px" onclick="depositFromAccount()" data-i18n="confirmDeposit">Подтвердить пополнение</button>
+      </div>
+
+      <div class="account-card">
+        <div class="muted" data-i18n="withdrawTitle">Вывод средств</div>
+        <select id="withdraw-token" class="account-input" onchange="updateWithdrawNet()" style="margin-bottom:8px">
+          <option value="ZTC">ZTC</option>
+          <option value="ZY">ZY</option>
+          <option value="ZFI">ZFI</option>
+        </select>
+        <div class="muted" id="withdraw-token-name">ZTC</div>
+        <div class="token-balances" id="withdrawTokenBalances" style="justify-content:flex-start;margin:6px 0 8px"></div>
+        <input id="withdraw-amount" class="account-input" type="number" min="0" step="0.0001" placeholder="1.00" oninput="updateWithdrawNet()" />
+        <div class="mini-actions">
+          <button class="small-btn" onclick="setWithdrawAmount('min')">MIN</button>
+          <button class="small-btn" onclick="setWithdrawAmount('25')">25%</button>
+          <button class="small-btn" onclick="setWithdrawAmount('50')">50%</button>
+          <button class="small-btn" onclick="setWithdrawAmount('max')">MAX</button>
+        </div>
+        <input id="withdraw-address" class="account-input" data-i18n-placeholder="walletAddress" placeholder="Адрес ZenChain" />
+        <div class="row"><span data-i18n="networkFee">Сетевая комиссия:</span><span class="zen-value" id="network-fee">0.0500 ZTC</span></div>
+        <div class="row"><span data-i18n="toReceive">К получению:</span><span class="zen-value" id="withdraw-net">0.0000 ZTC</span></div>
+        <button class="small-btn" style="width:100%;margin-top:10px;" onclick="confirmWithdraw()" data-i18n="confirmWithdraw">Подтвердить вывод</button>
+        <div class="muted" style="margin-top:10px" data-i18n="withdrawLog">История выводов</div>
+        <div id="withdraw-log" style="max-height:120px;overflow:auto;border:1px solid #222;padding:6px;border-radius:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-box" id="swap">
+    <h2 style="text-align:center"><span data-i18n="swap">Свап</span></h2>
+    <div class="token-pills" id="tokenPills"></div>
+    <div class="token-balances" id="tokenBalances"></div>
+    <div class="account-grid">
+      <div class="account-card">
+        <div class="muted" id="swap-from-label">Из (ZTC)</div>
+        <input id="swap-from" class="account-input" type="number" min="0" step="0.0001" value="0" oninput="previewSwap()" />
+      </div>
+      <div class="account-card">
+        <div class="muted" id="swap-to-label">В (ZY)</div>
+        <input id="swap-to" class="account-input" type="text" readonly value="0.0000" />
+        <button class="small-btn" style="width:100%;" onclick="doSwap()" data-i18n="swapNow">Обменять</button>
+      </div>
+    </div>
+    <div class="swap-meta">
+      <div class="row"><span data-i18n="swapFee">Комиссия обменника:</span><span class="zen-value" id="swap-fee">0.00%</span></div>
+      <div class="row"><span data-i18n="swapGasFee">Сетевая комиссия:</span><span class="zen-value" id="swap-gas-fee">0.0000 ZTC</span></div>
+    </div>
+    <p class="muted" id="swap-contracts"></p>
+  </div>
+
+  <div class="section-box" id="contacts"><h2 data-i18n="contacts">Контакты</h2><p>Telegram: @zenchain_support</p></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const contractAddress = "0x210fca7849Cfe87370881cF057C4A0a41c9eCCf4";
+    const ZEN_CHAIN_HEX = "0x20d8";
+    const WITHDRAW_FEE = 0.05;
+    const SWAP_DEX_FEE_RATE = 0.003;
+    const SWAP_NETWORK_FEE = 0.01;
+    const TOKENS = {
+      ZTC: { symbol: 'ZTC', address: '0x87033d521f1a5db206860f2688ca161719f85187', rate: 1 },
+      ZY: { symbol: 'ZY', address: '0x7f7752745A56e5B09Bd8d9fE6d6C3b3477E441FF', rate: 5 },
+      ZFI: { symbol: 'ZFI', address: '0x867bb07d47A3BF3d1f6835a71A2Ba639bf445DA9', rate: 2.5 },
+    };
+
+    let userAddress = null;
+    const socket = (typeof io !== 'undefined') ? io() : { emit: () => {}, on: () => {} };
+
+    let totalBets = 357758348;
+    let totalWagered = 1318498.27;
+    let income = 0;
+    let refIncome = 0;
+    let profit = 0;
+    let userBetCount = 0;
+    let gameBalance = 0;
+    let tokenBalances = { ZTC: 0, ZY: 0, ZFI: 0 };
+    let allBetHistory = JSON.parse(localStorage.getItem('allBetHistory') || '[]');
+
+    let currentLang = localStorage.getItem("language") || "ru";
+    let serverSeed = "";
+    let clientSeed = Math.random().toString(36).substring(2);
+    let nonce = 0;
+    let lastBet = 0;
+    let swapFrom = 'ZTC';
+    let swapTo = 'ZY';
+    let tokenClickOrder = [];
+
+    const inlineLogo = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0' stop-color='#d7ea46'/><stop offset='1' stop-color='#73e6b9'/></linearGradient></defs><rect width='512' height='512' fill='#000'/><path d='M45 100h422c0 45-22 70-66 70H111C67 170 45 145 45 100z' fill='url(#g)'/><rect x='70' y='205' width='372' height='238' rx='28' fill='none' stroke='url(#g)' stroke-width='36'/><rect x='181' y='292' width='150' height='96' fill='#000'/></svg>`)}`;
+
+    const i18n = {
+      ru: {
+        statsBetsTotal: "Ставки (все):", statsWagered: "Сумма ставок:", statsProfit: "Профит:", statsGameBal: "Игровой баланс:", statsUserBets: "Ставки:", statsIncome: "Доход:", statsStatus: "Статус:", statsPayout: "Профит побед:", statsRef: "Реф. доход:",
+        btnDeposit: "ПОПОЛНИТЬ", btnConnect: "ПОДКЛЮЧИТЬ", btnDisconnect: "ОТКЛЮЧИТЬ", btnWithdraw: "ВЫВЕСТИ",
+        half: "Половина", double: "Удвоить", betSize: "Размер ставки", winProfit: "Профит побед", less: "Меньше", more: "Больше", chanceX2: "x2 Шанс", chanceHalf: "/2 Шанс", winChance: "% Шанс выигрыша",
+        allBets: "Все ставки", myBets: "Мои ставки", chat: "Чат", fairBets: "Честные ставки", referral: "Рефералка", contacts: "Контакты", account: "Аккаунт", swap: "Свап", swapNow: "Обменять",
+        chatPlaceholder: "Сообщение...", send: "Отправить", newSeed: "Новый Seed", serverSeed: "Server Seed:", clientSeed: "Client Seed:", nonce: "Nonce:",
+        online: "В СЕТИ", offline: "ОФФЛАЙН", mmNotFound: "MetaMask не найден!", connectFirst: "Подключите кошелек!", badBet: "Неверная ставка", tooBigBet: "Слишком большая ставка", tooFast: "Слишком быстро", badAmount: "Неверная сумма", txError: "Ошибка транзакции",
+        depositAddress: "Ваш депозитный адрес:", depositHint: "Пополните и играйте мгновенно с внутреннего баланса.", depositTitle: "Пополнение", confirmDeposit: "Подтвердить пополнение", withdrawTitle: "Вывод средств", walletAddress: "Адрес ZenChain", networkFee: "Сетевая комиссия:", toReceive: "К получению:", confirmWithdraw: "Подтвердить вывод", badWithdrawAddr: "Введите адрес для вывода", win: "ПОБЕДА", lose: "ПРОИГРЫШ", swapFee: "Комиссия обменника:", swapGasFee: "Сетевая комиссия:", swapFrom: "Из", swapTo: "В", withdrawLog: "История выводов", txSent: "Транзакция"
+      },
+      en: {
+        statsBetsTotal: "Bets (total):", statsWagered: "Wagered:", statsProfit: "Profit:", statsGameBal: "Game balance:", statsUserBets: "Bets:", statsIncome: "Income:", statsStatus: "Status:", statsPayout: "Win payout:", statsRef: "Referral income:",
+        btnDeposit: "DEPOSIT", btnConnect: "CONNECT", btnDisconnect: "DISCONNECT", btnWithdraw: "WITHDRAW",
+        half: "Half", double: "Double", betSize: "Bet size", winProfit: "Win profit", less: "Less", more: "More", chanceX2: "x2 Chance", chanceHalf: "/2 Chance", winChance: "% Win chance",
+        allBets: "All bets", myBets: "My bets", chat: "Chat", fairBets: "Fair Bets", referral: "Referral", contacts: "Contacts", account: "Account", swap: "Swap", swapNow: "Swap",
+        chatPlaceholder: "Message...", send: "Send", newSeed: "New Seed", serverSeed: "Server Seed:", clientSeed: "Client Seed:", nonce: "Nonce:",
+        online: "ONLINE", offline: "OFFLINE", mmNotFound: "MetaMask not found!", connectFirst: "Connect wallet first!", badBet: "Invalid bet", tooBigBet: "Bet is too big", tooFast: "Too fast", badAmount: "Invalid amount", txError: "Transaction error",
+        depositAddress: "Deposit address:", depositHint: "Top up once and play instantly from internal balance.", depositTitle: "Deposit", confirmDeposit: "Confirm deposit", withdrawTitle: "Withdraw", walletAddress: "ZenChain address", networkFee: "Network fee:", toReceive: "To receive:", confirmWithdraw: "Confirm withdraw", badWithdrawAddr: "Enter withdraw address", win: "WIN", lose: "LOSE", swapFee: "Exchange fee:", swapGasFee: "Network fee:", swapFrom: "From", swapTo: "To", withdrawLog: "Withdraw history", txSent: "Transaction"
+      },
+      uk: {
+        statsBetsTotal: "Ставки (всі):", statsWagered: "Сума ставок:", statsProfit: "Профіт:", statsGameBal: "Ігровий баланс:", statsUserBets: "Ставки:", statsIncome: "Дохід:", statsStatus: "Статус:", statsPayout: "Профіт перемоги:", statsRef: "Реф. дохід:",
+        btnDeposit: "ПОПОВНИТИ", btnConnect: "ПІДКЛЮЧИТИ", btnDisconnect: "ВІДКЛЮЧИТИ", btnWithdraw: "ВИВЕСТИ",
+        half: "Половина", double: "Подвоїти", betSize: "Розмір ставки", winProfit: "Профіт перемоги", less: "Менше", more: "Більше", chanceX2: "x2 Шанс", chanceHalf: "/2 Шанс", winChance: "% Шанс виграшу",
+        allBets: "Всі ставки", myBets: "Мої ставки", chat: "Чат", fairBets: "Чесні ставки", referral: "Рефералка", contacts: "Контакти", account: "Акаунт", swap: "Своп", swapNow: "Обміняти",
+        chatPlaceholder: "Повідомлення...", send: "Надіслати", newSeed: "Новий Seed", serverSeed: "Server Seed:", clientSeed: "Client Seed:", nonce: "Nonce:",
+        online: "В МЕРЕЖІ", offline: "ОФЛАЙН", mmNotFound: "MetaMask не знайдено!", connectFirst: "Підключіть гаманець!", badBet: "Некоректна ставка", tooBigBet: "Занадто велика ставка", tooFast: "Занадто швидко", badAmount: "Некоректна сума", txError: "Помилка транзакції",
+        depositAddress: "Ваш депозитний адрес:", depositHint: "Поповніть і грайте миттєво з внутрішнього балансу.", depositTitle: "Поповнення", confirmDeposit: "Підтвердити поповнення", withdrawTitle: "Виведення коштів", walletAddress: "Адреса ZenChain", networkFee: "Мережева комісія:", toReceive: "До отримання:", confirmWithdraw: "Підтвердити виведення", badWithdrawAddr: "Введіть адресу для виведення", win: "ПЕРЕМОГА", lose: "ПРОГРАШ", swapFee: "Комісія обмінника:", swapGasFee: "Мережева комісія:", swapFrom: "З", swapTo: "В", withdrawLog: "Історія виведень", txSent: "Транзакція"
+      }
+    };
+
+    const t = (k) => (i18n[currentLang] && i18n[currentLang][k]) || k;
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) localStorage.setItem("referrer", ref);
+
+    function applyLogo() {
+      const candidates = ["logo.png", "Свой сайт 1.jpg", inlineLogo];
+      [document.getElementById("leftLogo"), document.getElementById("rightLogo")].forEach((img) => {
+        let idx = 0;
+        const next = () => {
+          img.src = candidates[idx];
+          img.onerror = () => { idx = Math.min(idx + 1, candidates.length - 1); if (candidates[idx] !== img.src) next(); };
+        };
+        next();
+      });
+    }
+
+    function applyTranslations() {
+      document.documentElement.lang = currentLang;
+      document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t(el.dataset.i18nPlaceholder));
+      document.getElementById('status-text').textContent = userAddress ? t('online') : t('offline');
+      document.getElementById('lang-ru').classList.toggle('active', currentLang === 'ru');
+      document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
+      document.getElementById('lang-uk').classList.toggle('active', currentLang === 'uk');
+      localStorage.setItem('language', currentLang);
+      updateConnectButton();
+      renderSwapUI();
+      renderStats();
+      updateClock();
+    }
+    function setLanguage(lang) { currentLang = lang; applyTranslations(); }
+
+    function updateClock() {
+      const locale = currentLang === 'ru' ? 'ru-RU' : currentLang === 'uk' ? 'uk-UA' : 'en-US';
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const now = new Date().toLocaleString(locale, { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      document.getElementById('clock').textContent = `${now} (${tz})`;
+    }
+
+    function updateConnectButton() {
+      const btn = document.getElementById('connectBtn');
+      if (userAddress) btn.textContent = t('btnDisconnect');
+      else btn.textContent = t('btnConnect');
+    }
+
+    async function toggleWalletConnection() {
+      if (userAddress) {
+        savePlayerState();
+        userAddress = null;
+        document.getElementById('status-text').style.color = '#555';
+        document.getElementById('ref-link').value = '';
+        applyTranslations();
+        return;
+      }
+      await connectWallet();
+    }
+
+    async function requestGasApproval(tag) {
+      if (!window.ethereum || !userAddress) throw new Error('wallet');
+      return window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: userAddress, to: contractAddress, value: '0x0', data: '0x' }]
+      });
+    }
+
+
+    function playerStateKey(addr) {
+      return `playerState:${String(addr || '').toLowerCase()}`;
+    }
+
+    function savePlayerState() {
+      if (!userAddress) return;
+      const state = { gameBalance, tokenBalances, income, profit, refIncome };
+      localStorage.setItem(playerStateKey(userAddress), JSON.stringify(state));
+    }
+
+    function loadPlayerState() {
+      if (!userAddress) return;
+      const raw = localStorage.getItem(playerStateKey(userAddress));
+      if (!raw) {
+        gameBalance = 0;
+        tokenBalances = { ZTC: 0, ZY: 0, ZFI: 0 };
+        income = 0;
+        profit = 0;
+        refIncome = 0;
+        return;
+      }
+      try {
+        const state = JSON.parse(raw);
+        gameBalance = Number(state.gameBalance || 0);
+        tokenBalances = {
+          ZTC: Number(state.tokenBalances?.ZTC || gameBalance || 0),
+          ZY: Number(state.tokenBalances?.ZY || 0),
+          ZFI: Number(state.tokenBalances?.ZFI || 0),
+        };
+        income = Number(state.income || 0);
+        profit = Number(state.profit || 0);
+        refIncome = Number(state.refIncome || 0);
+      } catch {
+        gameBalance = 0;
+        tokenBalances = { ZTC: 0, ZY: 0, ZFI: 0 };
+      }
+    }
+
+    function renderAllBetsFromStorage() {
+      const all = document.getElementById('all-list');
+      if (!all) return;
+      all.innerHTML = '';
+      allBetHistory.slice().reverse().forEach(b => addBetRow(b.addr, b.bet, b.win, b.roll, false, false));
+    }
+
+    function resetMyBetsOnLogin() {
+      userBetCount = 0;
+      const my = document.getElementById('my-list');
+      if (my) my.innerHTML = '';
+    }
+
+    function appendWithdrawLog(entry) {
+      const wrap = document.getElementById('withdraw-log');
+      if (!wrap) return;
+      const row = document.createElement('div');
+      row.className = 'bet-item';
+      row.innerHTML = `<span>${entry.token}</span><span>${entry.amount.toFixed(4)}</span><span>${String(entry.to).slice(0, 8)}...</span><span>${String(entry.tx).slice(0, 10)}...</span>`;
+      wrap.prepend(row);
+    }
+
+    function formatIncome(v) {
+      const sign = v >= 0 ? '+' : '-';
+      return `${sign}${Math.abs(v).toFixed(2)} ZTC`;
+    }
+
+    function renderStats() {
+      const locale = currentLang === 'ru' ? 'ru-RU' : currentLang === 'uk' ? 'uk-UA' : 'en-US';
+      document.getElementById('top-total-bets').textContent = totalBets.toLocaleString(locale);
+      document.getElementById('top-total-wagered').textContent = totalWagered.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('top-profit').textContent = `${profit.toFixed(2)} ZTC`;
+      tokenBalances.ZTC = gameBalance;
+      document.getElementById('game-balance').textContent = `${gameBalance.toFixed(6)} ZTC`;
+      document.getElementById('user-bets').textContent = userBetCount.toLocaleString(locale);
+
+      const incomeEl = document.getElementById('top-income');
+      incomeEl.textContent = formatIncome(income);
+      incomeEl.classList.remove('income-positive', 'income-negative');
+      incomeEl.classList.add(income >= 0 ? 'income-positive' : 'income-negative');
+      document.getElementById('ref-income').textContent = `${refIncome.toFixed(2)} ZTC`;
+      renderTokenBalances();
+      const wt = document.getElementById('withdraw-token')?.value || 'ZTC';
+      const nameEl = document.getElementById('withdraw-token-name');
+      if (nameEl) nameEl.textContent = wt;
+      savePlayerState();
+      updateWithdrawNet();
+    }
+
+    function showSection(id) { document.querySelectorAll('.section-box').forEach(s => s.classList.remove('active')); document.getElementById(id)?.classList.add('active'); }
+
+    function generateSeed() {
+      serverSeed = Math.random().toString(36).substring(2);
+      nonce = 0;
+      document.getElementById('server-seed').textContent = serverSeed;
+      document.getElementById('client-seed').textContent = clientSeed;
+      document.getElementById('nonce').textContent = nonce;
+    }
+
+    function provablyFairRoll() {
+      nonce++;
+      document.getElementById('nonce').textContent = nonce;
+      const hash = sha256(serverSeed + clientSeed + nonce);
+      return (parseInt(hash.substring(0, 8), 16) % 10000) / 100;
+    }
+
+    function canBet() {
+      const now = Date.now();
+      if (now - lastBet < 800) { alert(t('tooFast')); return false; }
+      lastBet = now;
+      return true;
+    }
+
+    function payReferral(amount) {
+      const referrer = localStorage.getItem('referrer');
+      if (!referrer) return;
+      const refProfit = amount * 0.01;
+      refIncome += refProfit;
+      socket.emit('ref_profit', { referrer, amount: refProfit });
+    }
+
+    async function connectWallet() {
+      if (!window.ethereum) return alert(t('mmNotFound'));
+      try {
+        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ZEN_CHAIN_HEX }] }).catch(() => {});
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+        document.getElementById('status-text').style.color = '#99ff00';
+        document.getElementById('deposit-address').textContent = contractAddress;
+        document.getElementById('withdraw-address').value = userAddress;
+        document.getElementById('ref-link').value = `${window.location.origin}${window.location.pathname}?ref=${userAddress}`;
+        loadPlayerState();
+        resetMyBetsOnLogin();
+        socket.emit('auth', userAddress);
+        applyTranslations();
+      } catch (e) {
+        alert(e.message || t('txError'));
+      }
+    }
+
+    async function depositFromAccount() {
+      if (!userAddress) return alert(t('connectFirst'));
+      const parsed = parseFloat(document.getElementById('deposit-amount').value);
+      if (!Number.isFinite(parsed) || parsed <= 0) return alert(t('badAmount'));
+      try {
+        const wei = '0x' + BigInt(Math.floor(parsed * 1e18)).toString(16);
+        await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{ from: userAddress, to: contractAddress, value: wei }]
+        });
+        gameBalance += parsed;
+        tokenBalances.ZTC = gameBalance;
+        socket.emit('deposit', { address: userAddress, amount: parsed, contract: contractAddress });
+        renderStats();
+      } catch (e) {
+        alert(t('txError'));
+      }
+    }
+
+    function setWithdrawAmount(mode) {
+      const el = document.getElementById('withdraw-amount');
+      if (mode === 'min') el.value = '0.10';
+      const token = document.getElementById('withdraw-token')?.value || 'ZTC';
+      const base = Number(tokenBalances[token] || 0);
+      if (mode === '25') el.value = (base * 0.25).toFixed(4);
+      if (mode === '50') el.value = (base * 0.5).toFixed(4);
+      if (mode === 'max') el.value = Math.max(0, base).toFixed(4);
+      updateWithdrawNet();
+    }
+
+    function updateWithdrawNet() {
+      const amount = parseFloat(document.getElementById('withdraw-amount')?.value || '0') || 0;
+      const token = document.getElementById('withdraw-token')?.value || 'ZTC';
+      const net = Math.max(0, amount - WITHDRAW_FEE);
+      document.getElementById('network-fee').textContent = `${WITHDRAW_FEE.toFixed(4)} ${token}`;
+      document.getElementById('withdraw-net').textContent = `${net.toFixed(4)} ${token}`;
+    }
+
+    function confirmWithdraw() {
+      if (!userAddress) return alert(t('connectFirst'));
+      const amount = parseFloat(document.getElementById('withdraw-amount').value || '0');
+      const to = document.getElementById('withdraw-address').value.trim();
+      const token = document.getElementById('withdraw-token')?.value || 'ZTC';
+      const available = Number(tokenBalances[token] || 0);
+      if (!to) return alert(t('badWithdrawAddr'));
+      if (!Number.isFinite(amount) || amount <= 0 || amount > available || amount <= WITHDRAW_FEE) return alert(t('badAmount'));
+      const net = amount - WITHDRAW_FEE;
+      requestGasApproval('withdraw').then((txHash) => {
+        tokenBalances[token] = available - amount;
+        if (token === 'ZTC') gameBalance = tokenBalances.ZTC;
+        socket.emit('withdraw', { address: userAddress, token, amount, to, fee: WITHDRAW_FEE, netAmount: net, txHash });
+        appendWithdrawLog({ token, amount: net, to, tx: txHash || 'pending' });
+        renderStats();
+        alert(`${t('confirmWithdraw')}: ${net.toFixed(4)} ${token}`);
+      }).catch(() => alert(t('txError')));
+    }
+
+    function animateRoll(finalRoll, win) {
+      const display = document.getElementById('roll-display');
+      let ticks = 0;
+      const timer = setInterval(() => {
+        ticks++;
+        display.style.color = '#999';
+        display.textContent = (Math.random() * 99.99).toFixed(2);
+        if (ticks > 12) {
+          clearInterval(timer);
+          display.textContent = finalRoll.toFixed(2);
+          display.style.color = win ? 'var(--zen-green)' : 'var(--loss-red)';
+        }
+      }, 70);
+    }
+
+    function playGame(target) {
+      if (!userAddress) return alert(t('connectFirst'));
+      if (!canBet()) return;
+      const bet = parseFloat(document.getElementById('betAmount').value);
+      if (!Number.isFinite(bet) || bet <= 0) return alert(t('badBet'));
+      if (bet > 1000) return alert(t('tooBigBet'));
+      if (bet > gameBalance) return alert(t('badAmount'));
+
+      const roll = provablyFairRoll();
+      const win = target < 50 ? roll < target : roll > target;
+      const chance = Math.min(98, Math.max(0.01, parseFloat(document.getElementById('winChance').value) || 49.5));
+      const payout = bet / (chance / 100) * 0.99;
+      const winAmount = win ? payout : 0;
+
+      userBetCount++;
+      totalBets++;
+      totalWagered += bet;
+      gameBalance += win ? (winAmount - bet) : -bet;
+      profit += (winAmount - bet);
+      income = profit;
+      if (win) payReferral(bet);
+      animateRoll(roll, win);
+
+      socket.emit('play_bet', { address: userAddress, bet, target, roll, win, nonce, serverSeed, clientSeed, payout: winAmount });
+      renderStats();
+      addBetRow(userAddress, bet, win, roll, true);
+    }
+
+    function addBetRow(addr, bet, win, roll, isMy, persistAll = true) {
+      const row = `<div class="bet-item" style="border-left:3px solid ${win ? '#99ff00' : '#ff4444'}"><span>${String(addr).slice(0,6)}...</span><span>${Number(bet).toFixed(4)} ZTC</span><span>Roll: ${Number(roll).toFixed(2)}</span><b style="color:${win ? '#99ff00' : '#ff4444'}">${win ? t('win') : t('lose')}</b></div>`;
+      document.getElementById('all-list').insertAdjacentHTML('afterbegin', row);
+      if (isMy) document.getElementById('my-list').insertAdjacentHTML('afterbegin', row);
+      if (persistAll) {
+        allBetHistory.push({ addr, bet, win, roll });
+        if (allBetHistory.length > 500) allBetHistory = allBetHistory.slice(-500);
+        localStorage.setItem('allBetHistory', JSON.stringify(allBetHistory));
+      }
+    }
+
+    function calcProfit() {
+      const bet = parseFloat(document.getElementById('betAmount').value) || 0;
+      let chance = parseFloat(document.getElementById('winChance').value) || 1;
+      chance = Math.min(98, Math.max(0.01, chance));
+      const payout = 1 / (chance / 100) * 0.99;
+      document.getElementById('profit-calc').textContent = (bet * payout).toFixed(8) + ' ZTC';
+      document.getElementById('panel-payout').textContent = payout.toFixed(2) + 'x';
+    }
+    function multiplyBet(f) { const el = document.getElementById('betAmount'); el.value = ((parseFloat(el.value)||0) * f).toFixed(8); calcProfit(); }
+    function setBetValue(v) { const el = document.getElementById('betAmount'); if (v === 'min') el.value = '0.00010000'; if (v === 'max') el.value = Math.max(0.0001, gameBalance).toFixed(8); calcProfit(); }
+    function setChance(v) { document.getElementById('winChance').value = Number(v).toFixed(2); calcProfit(); }
+    function multiplyChance(f) { const el = document.getElementById('winChance'); const res = (parseFloat(el.value)||0) * f; el.value = (res > 98 ? 98 : res < 0.01 ? 0.01 : res).toFixed(2); calcProfit(); }
+
+    function sendChat() {
+      if (!userAddress) return alert(t('connectFirst'));
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      socket.emit('chat_message', { address: userAddress, text });
+      input.value = '';
+    }
+
+    function renderSwapUI() {
+      const pills = document.getElementById('tokenPills');
+      pills.innerHTML = '';
+      Object.keys(TOKENS).forEach(sym => {
+        const btn = document.createElement('button');
+        btn.className = 'token-pill' + ((sym === swapFrom || sym === swapTo) ? ' active' : '');
+        btn.textContent = sym;
+        btn.onclick = () => onTokenClick(sym);
+        pills.appendChild(btn);
+      });
+      document.getElementById('swap-from-label').textContent = `${t('swapFrom')} (${swapFrom})`;
+      document.getElementById('swap-to-label').textContent = `${t('swapTo')} (${swapTo})`;
+      document.getElementById('swap-fee').textContent = `${(SWAP_DEX_FEE_RATE*100).toFixed(2)}%`;
+      document.getElementById('swap-gas-fee').textContent = `${SWAP_NETWORK_FEE.toFixed(4)} ${swapFrom}`;
+      document.getElementById('swap-contracts').textContent = `ZTC: ${TOKENS.ZTC.address} | ZY: ${TOKENS.ZY.address} | ZFI: ${TOKENS.ZFI.address}`;
+      renderTokenBalances();
+      previewSwap();
+    }
+
+    function renderTokenBalances() {
+      const wrap = document.getElementById('tokenBalances');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      const items = Object.keys(TOKENS).map(sym => `${sym}: ${(tokenBalances[sym] || 0).toFixed(4)}`);
+      items.forEach(txt => {
+        const d = document.createElement('div');
+        d.className = 'token-bal-item';
+        d.textContent = txt;
+        wrap.appendChild(d);
+      });
+      const w = document.getElementById('withdrawTokenBalances');
+      if (w) {
+        w.innerHTML = '';
+        items.forEach(txt => {
+          const d = document.createElement('div');
+          d.className = 'token-bal-item';
+          d.textContent = txt;
+          w.appendChild(d);
+        });
+      }
+    }
+
+    function onTokenClick(sym) {
+      tokenClickOrder.push(sym);
+      if (tokenClickOrder.length > 2) tokenClickOrder = [tokenClickOrder[1], tokenClickOrder[2]];
+      if (tokenClickOrder.length === 1) {
+        swapFrom = tokenClickOrder[0];
+        if (swapFrom === swapTo) swapTo = Object.keys(TOKENS).find(s => s !== swapFrom) || 'ZY';
+      }
+      if (tokenClickOrder.length === 2) {
+        swapFrom = tokenClickOrder[0];
+        swapTo = tokenClickOrder[1];
+        if (swapFrom === swapTo) {
+          tokenClickOrder.pop();
+        }
+      }
+      renderSwapUI();
+    }
+
+    function previewSwap() {
+      const from = parseFloat(document.getElementById('swap-from').value || '0') || 0;
+      const amountInBase = from / TOKENS[swapFrom].rate;
+      const grossTo = amountInBase * TOKENS[swapTo].rate;
+      const to = grossTo * (1 - SWAP_DEX_FEE_RATE);
+      document.getElementById('swap-to').value = to.toFixed(4);
+    }
+
+    function doSwap() {
+      if (!userAddress) return alert(t('connectFirst'));
+      const from = parseFloat(document.getElementById('swap-from').value || '0') || 0;
+      const totalFromCost = from + SWAP_NETWORK_FEE;
+      if (from <= 0) return alert(t('badAmount'));
+      if ((tokenBalances[swapFrom] || 0) < totalFromCost) return alert(t('badAmount'));
+
+      const amountInBase = from / TOKENS[swapFrom].rate;
+      const grossTo = amountInBase * TOKENS[swapTo].rate;
+      const to = grossTo * (1 - SWAP_DEX_FEE_RATE);
+
+      requestGasApproval('swap').then(() => {
+        tokenBalances[swapFrom] = (tokenBalances[swapFrom] || 0) - totalFromCost;
+        tokenBalances[swapTo] = (tokenBalances[swapTo] || 0) + to;
+        gameBalance = tokenBalances.ZTC || 0;
+        socket.emit('swap', {
+          address: userAddress,
+          fromToken: swapFrom,
+          toToken: swapTo,
+          fromAmount: from,
+          networkFee: SWAP_NETWORK_FEE,
+          dexFeeRate: SWAP_DEX_FEE_RATE,
+          toAmount: to,
+          fromAddress: TOKENS[swapFrom].address,
+          toAddress: TOKENS[swapTo].address
+        });
+        renderStats();
+        renderSwapUI();
+      }).catch(() => alert(t('txError')));
+    }
+
+    socket.on('update_balance', bal => { gameBalance = Number(bal) || 0; tokenBalances.ZTC = gameBalance; renderStats(); });
+    socket.on('game_result', res => { if (res) addBetRow(res.address || userAddress || 'user', res.bet || 0, !!res.win, res.roll || 0, (res.address || userAddress) === userAddress); });
+    socket.on('chat_message', msg => {
+      const wrap = document.getElementById('chat-messages');
+      const line = document.createElement('div');
+      line.textContent = `${String(msg.address || 'anon').slice(0, 6)}: ${msg.text || ''}`;
+      line.style.marginBottom = '6px';
+      wrap.appendChild(line);
+      wrap.scrollTop = wrap.scrollHeight;
+    });
+
+    document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+
+    applyLogo();
+    generateSeed();
+    calcProfit();
+    renderAllBetsFromStorage();
+    renderSwapUI();
+    renderStats();
+    setInterval(updateClock, 1000);
+    applyTranslations();
+    showSection('allbets');
+  </script>
+</body>
+</html>
